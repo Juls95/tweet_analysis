@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+  <!-- Background rectangle for main logo -->
+  <rect x="160" y="60" width="80" height="80" fill="#6B4C9A" rx="10" />
+  
+  <!-- Stylized TH symbol -->
+  <path d="M180 80 L220 80 L220 85 L203 85 L203 120 L197 120 L197 85 L180 85 Z" fill="white"/>
+  <path d="M190 95 L210 95 L210 100 L203 100 L203 120 L197 120 L197 100 L190 100 Z" fill="#6B4C9A"/>
+  
+  <!-- THENA text -->
+  <text x="250" y="110" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="white">THENA</text>
+
+  <!-- Technology Circle (CPU/Circuit) -->
+  <circle cx="100" cy="100" r="30" fill="none" stroke="#6B4C9A" stroke-width="2"/>
+  <rect x="85" y="85" width="30" height="30" fill="none" stroke="#6B4C9A" stroke-width="2"/>
+  <line x1="70" y1="100" x2="130" y2="100" stroke="#6B4C9A" stroke-width="2"/>
+  <line x1="100" y1="70" x2="100" y2="130" stroke="#6B4C9A" stroke-width="2"/>
+  
+  <!-- Analysis Graph -->
+  <path d="M320 160 L320 120 L340 140 L360 110 L380 130" fill="none" stroke="#6B4C9A" stroke-width="2"/>
+  <circle cx="320" cy="120" r="3" fill="#6B4C9A"/>
+  <circle cx="340" cy="140" r="3" fill="#6B4C9A"/>
+  <circle cx="360" cy="110" r="3" fill="#6B4C9A"/>
+  <circle cx="380" cy="130" r="3" fill="#6B4C9A"/>
+
+  <!-- Twitter Bird Silhouette -->
+  <path d="M80 160 C85 155, 90 150, 85 145 C95 145, 100 140, 95 135 C100 136, 105 134, 110 130 C105 125, 100 123, 95 124 C90 119, 80 118, 75 123 C65 123, 60 128, 65 135 C60 135, 55 140, 60 145 C65 150, 75 155, 80 160" 
+        fill="#6B4C9A"/>
+
+  <!-- User Icons -->
+  <circle cx="350" cy="40" r="10" fill="#6B4C9A"/>
+  <path d="M330 70 C330 60, 370 60, 370 70" fill="none" stroke="#6B4C9A" stroke-width="2"/>
+  <circle cx="380" cy="40" r="8" fill="#6B4C9A"/>
+  <path d="M365 65 C365 58, 395 58, 395 65" fill="none" stroke="#6B4C9A" stroke-width="2"/>
+
+  <!-- Binary Data -->
+  <text x="70" y="40" font-family="monospace" font-size="12" fill="#6B4C9A">1010 0101</text>
+  <text x="70" y="55" font-family="monospace" font-size="12" fill="#6B4C9A">0101 1010</text>
+</svg>

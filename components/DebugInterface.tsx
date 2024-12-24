@@ -1,6 +1,8 @@
 "use client"
 import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import Image from 'next/image';
+import Logo from './Logo';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Initialize Supabase client
@@ -223,174 +225,209 @@ export default function DebugInterface() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="bg-white/5 p-6 rounded-lg mb-6">
-        <h2 className="text-xl font-bold mb-4">Twitter API Testing Interface</h2>
-        
-        <div className="flex gap-4 mb-6">
-          <input
-            type="text"
-            value={hashtag}
-            onChange={(e) => setHashtag(e.target.value)}
-            placeholder="Enter hashtag (without #)"
-            className="flex-1 p-2 rounded bg-black/20"
-          />
-          <button
-            onClick={testTwitterAPI}
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 rounded disabled:opacity-50"
-          >
-            {loading ? 'Testing...' : 'Test API'}
-          </button>
-          <button
-            onClick={loadFromJson}
-            disabled={loading}
-            className="px-4 py-2 bg-green-600 rounded disabled:opacity-50"
-          >
-            Load from JSON
-          </button>
-          <button
-            onClick={analyzeTweets}
-            disabled={analyzing}
-            className="px-4 py-2 bg-purple-600 rounded disabled:opacity-50"
-          >
-            {analyzing ? 'Analyzing...' : 'Analyze Tweets'}
-          </button>
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
+      <div className="container mx-auto px-4 py-8">
+        <header className="flex justify-between items-center mb-8">
+          <Logo />
+          <nav>
+            <ul className="flex space-x-4">
+              <li><a href="#" className="text-blue-300 hover:text-blue-100">Home</a></li>
+              <li><a href="/about" className="text-blue-300 hover:text-blue-100">About</a></li>
+              
+            </ul>
+          </nav>
+        </header>
 
-        {error && (
-          <div className="p-4 mb-4 bg-red-500/20 text-red-300 rounded">
-            {error}
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-6">
-          {/* Twitter API Response */}
-          <div className="space-y-2">
-            <h3 className="font-bold text-lg">Twitter/JSON Response:</h3>
-            <div className="bg-black/20 p-4 rounded overflow-auto max-h-96">
-              <pre className="text-xs whitespace-pre-wrap">
-                {twitterResponse ? JSON.stringify(twitterResponse, null, 2) : 'No data yet'}
-              </pre>
-            </div>
-          </div>
-
-          {/* Supabase Stored Data */}
-          <div className="space-y-2">
-            <h3 className="font-bold text-lg">Supabase Stored Data:</h3>
-            <div className="bg-black/20 p-4 rounded overflow-auto max-h-96">
-              <pre className="text-xs whitespace-pre-wrap">
-                {supabaseData ? JSON.stringify(supabaseData, null, 2) : 'No data yet'}
-              </pre>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Analysis Results */}
-      {analysisResults?.data && (
-        <div className="bg-white/5 p-6 rounded-lg mb-6">
-          <h3 className="text-xl font-bold mb-4">Sentiment Analysis Results</h3>
-          
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="p-4 bg-black/20 rounded">
-              <h4 className="font-bold mb-2">Sentiment Distribution</h4>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                  <Pie
-                      data={Object.entries(analysisResults.data.sentiment_distribution).map(([key, value]) => ({
-                        name: key,
-                        value: value as number
-                      }))}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={30}
-                      outerRadius={60}
-                      dataKey="value"
-                      label
+        <main>
+          <div className="bg-white/10 p-6 rounded-lg shadow-lg mb-8">
+            <h1 className="text-3xl font-bold mb-6 text-center text-blue-300">Sentiment Analysis Dashboard</h1>
+            
+            <div className="flex flex-col md:flex-row gap-6 mb-8">
+              <div className="flex-1">
+                <h2 className="text-xl font-semibold mb-4 text-blue-200">Twitter API Testing Interface</h2>
+                <div className="flex flex-col gap-4">
+                  <input
+                    type="text"
+                    value={hashtag}
+                    onChange={(e) => setHashtag(e.target.value)}
+                    placeholder="Enter hashtag (without #)"
+                    className="p-2 rounded bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-blue-500"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={testTwitterAPI}
+                      disabled={loading}
+                      className="flex-1 px-4 py-2 bg-blue-600 rounded disabled:opacity-50 hover:bg-blue-700 transition-colors"
                     >
-                      {Object.entries(analysisResults.data.sentiment_distribution).map(([key], index) => (
-                        <Cell key={`cell-${index}`} fill={SENTIMENT_COLORS[key as keyof typeof SENTIMENT_COLORS]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="p-4 bg-black/20 rounded">
-              <h4 className="font-bold mb-2">Bot Detection</h4>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: 'Human', value: analysisResults.data.bot_statistics.human_count },
-                        { name: 'Bot', value: analysisResults.data.bot_statistics.bot_count }
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={30}
-                      outerRadius={60}
-                      fill="#82ca9d"
-                      dataKey="value"
-                      label
-                    />
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="p-4 bg-black/20 rounded">
-              <h4 className="font-bold mb-2">Most Common Words</h4>
-              <div className="space-y-2 max-h-48 overflow-auto">
-                {analysisResults.data.most_common_words.map(([word, count], index) => (
-                  <div key={word} className="flex justify-between">
-                    <span>{word}</span>
-                    <span className="text-gray-400">{count}</span>
+                      {loading ? 'Testing...' : 'Test API'}
+                    </button>
+                    <button
+                      onClick={loadFromJson}
+                      disabled={loading}
+                      className="flex-1 px-4 py-2 bg-green-600 rounded disabled:opacity-50 hover:bg-green-700 transition-colors"
+                    >
+                      Load from JSON
+                    </button>
+                    <button
+                      onClick={analyzeTweets}
+                      disabled={analyzing}
+                      className="flex-1 px-4 py-2 bg-purple-600 rounded disabled:opacity-50 hover:bg-purple-700 transition-colors"
+                    >
+                      {analyzing ? 'Analyzing...' : 'Analyze Tweets'}
+                    </button>
                   </div>
-                ))}
+                </div>
+              </div>
+              <div className="flex-1">
+  <Image 
+    src={'/thena_logo.jpg'} 
+    alt="Sentiment Analysis Illustration" 
+    width={400} 
+    height={300} 
+    className="mx-auto"
+  />
+</div>
+            </div>
+
+            {error && (
+              <div className="p-4 mb-4 bg-red-500/20 text-red-300 rounded">
+                {error}
+              </div>
+            )}
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Twitter API Response */}
+              <div className="space-y-2">
+                <h3 className="font-bold text-lg text-blue-200">Twitter/JSON Response:</h3>
+                <div className="bg-gray-800 p-4 rounded overflow-auto max-h-96">
+                  <pre className="text-xs text-gray-300 whitespace-pre-wrap">
+                    {twitterResponse ? JSON.stringify(twitterResponse, null, 2) : 'No data yet'}
+                  </pre>
+                </div>
+              </div>
+
+              {/* Supabase Stored Data */}
+              <div className="space-y-2">
+                <h3 className="font-bold text-lg text-blue-200">Supabase Stored Data:</h3>
+                <div className="bg-gray-800 p-4 rounded overflow-auto max-h-96">
+                  <pre className="text-xs text-gray-300 whitespace-pre-wrap">
+                    {supabaseData ? JSON.stringify(supabaseData, null, 2) : 'No data yet'}
+                  </pre>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-black/20 p-4 rounded">
-            <h4 className="font-bold mb-2">Raw Analysis Data:</h4>
-            <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-96">
-              {JSON.stringify(analysisResults.data, null, 2)}
-            </pre>
-          </div>
-        </div>
-      )}
-
-      {/* Data Summary */}
-      {(twitterResponse || supabaseData) && (
-        <div className="bg-white/5 p-6 rounded-lg">
-          <h3 className="text-xl font-bold mb-4">Data Summary</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-black/20 rounded">
-              <h4 className="font-bold mb-2">Data Source</h4>
-              <p>Tweets Retrieved: {twitterResponse?.data?.tweets?.length || 0}</p>
-              <p>Success: {twitterResponse?.success ? 'Yes' : 'No'}</p>
-              {twitterResponse?.rateLimits && (
-                <div className="mt-2">
-                  <p>Rate Limit Remaining: {twitterResponse.rateLimits.remaining}</p>
-                  <p>Resets At: {twitterResponse.rateLimits.resetsAt}</p>
+          {/* Analysis Results */}
+          {analysisResults?.data && (
+            <div className="bg-white/10 p-6 rounded-lg shadow-lg mb-8">
+              <h3 className="text-2xl font-bold mb-6 text-center text-blue-300">Sentiment Analysis Results</h3>
+              
+              <div className="grid md:grid-cols-3 gap-6 mb-6">
+                <div className="p-4 bg-gray-800 rounded">
+                  <h4 className="font-bold mb-2 text-blue-200">Sentiment Distribution</h4>
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={Object.entries(analysisResults.data.sentiment_distribution).map(([key, value]) => ({
+                            name: key,
+                            value: value as number
+                          }))}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={30}
+                          outerRadius={60}
+                          dataKey="value"
+                          label
+                        >
+                          {Object.entries(analysisResults.data.sentiment_distribution).map(([key], index) => (
+                            <Cell key={`cell-${index}`} fill={SENTIMENT_COLORS[key as keyof typeof SENTIMENT_COLORS]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-              )}
+
+                <div className="p-4 bg-gray-800 rounded">
+                  <h4 className="font-bold mb-2 text-blue-200">Bot Detection</h4>
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Human', value: analysisResults.data.bot_statistics.human_count },
+                            { name: 'Bot', value: analysisResults.data.bot_statistics.bot_count }
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={30}
+                          outerRadius={60}
+                          fill="#82ca9d"
+                          dataKey="value"
+                          label
+                        >
+                          {BOT_COLORS.map((color, index) => (
+                            <Cell key={`cell-${index}`} fill={color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-gray-800 rounded">
+                  <h4 className="font-bold mb-2 text-blue-200">Most Common Words</h4>
+                  <div className="space-y-2 max-h-48 overflow-auto">
+                    {analysisResults.data.most_common_words.map(([word, count], index) => (
+                      <div key={word} className="flex justify-between">
+                        <span className="text-gray-300">{word}</span>
+                        <span className="text-gray-400">{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-800 p-4 rounded">
+                <h4 className="font-bold mb-2 text-blue-200">Raw Analysis Data:</h4>
+                <pre className="text-xs text-gray-300 whitespace-pre-wrap overflow-auto max-h-96">
+                  {JSON.stringify(analysisResults.data, null, 2)}
+                </pre>
+              </div>
             </div>
-            <div className="p-4 bg-black/20 rounded">
-              <h4 className="font-bold mb-2">Supabase Storage</h4>
-              <p>Records Stored: {supabaseData?.length || 0}</p>
-              <p>Latest Record: {supabaseData?.[0]?.created_at ? 
-                new Date(supabaseData[0].created_at).toLocaleString() : 'N/A'}</p>
+          )}
+
+          {/* Data Summary */}
+          {(twitterResponse || supabaseData) && (
+            <div className="bg-white/10 p-6 rounded-lg shadow-lg">
+              <h3 className="text-2xl font-bold mb-6 text-center text-blue-300">Data Summary</h3>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="p-4 bg-gray-800 rounded">
+                  <h4 className="font-bold mb-2 text-blue-200">Data Source</h4>
+                  <p className="text-gray-300">Tweets Retrieved: {twitterResponse?.data?.tweets?.length || 0}</p>
+                  <p className="text-gray-300">Success: {twitterResponse?.success ? 'Yes' : 'No'}</p>
+                  {twitterResponse?.rateLimits && (
+                    <div className="mt-2">
+                      <p className="text-gray-300">Rate Limit Remaining: {twitterResponse.rateLimits.remaining}</p>
+                      <p className="text-gray-300">Resets At: {twitterResponse.rateLimits.resetsAt}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="p-4 bg-gray-800 rounded">
+                  <h4 className="font-bold mb-2 text-blue-200">Supabase Storage</h4>
+                  <p className="text-gray-300">Records Stored: {supabaseData?.length || 0}</p>
+                  <p className="text-gray-300">Latest Record: {supabaseData?.[0]?.created_at ? 
+                    new Date(supabaseData[0].created_at).toLocaleString() : 'N/A'}</p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </main>
+      </div>
     </div>
   );
 }
