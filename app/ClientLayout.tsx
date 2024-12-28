@@ -1,10 +1,10 @@
-// app/ClientLayout.tsx (Client Component)
+// app/ClientLayout.tsx
 'use client'
 
-export default function ClientLayout({
-  children,
-}: {
+type ClientLayoutProps = {
   children: React.ReactNode
-}) {
-  return <div className="min-h-screen">{children}</div>
+}
+
+export default function ClientLayout({ children }: ClientLayoutProps) {
+  return <>{children}</>
 }
