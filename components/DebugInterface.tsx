@@ -1,4 +1,4 @@
-"use client"
+//"use client"
 import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Image from 'next/image';
