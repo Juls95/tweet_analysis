@@ -1,7 +1,7 @@
-# analysis_service.py
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from supabase import create_client, Client
+# api/analyze.py
+from http.client import responses
+from typing import Dict, Any
+import json
 from textblob import TextBlob
 import nltk
 from nltk.tokenize import word_tokenize
@@ -10,19 +10,9 @@ from nltk.stem import WordNetLemmatizer
 from collections import Counter
 import re
 import os
-from typing import Dict, List, Any, Optional
-from dotenv import load_dotenv
-from pydantic import BaseModel
-import logging
+from supabase import create_client
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Load environment variables
-load_dotenv()
-
-# Download required NLTK data
+# Download required NLTK data during cold start
 try:
     nltk.download('punkt', quiet=True)
     nltk.download('stopwords', quiet=True)
@@ -30,114 +20,56 @@ try:
     nltk.download('averaged_perceptron_tagger', quiet=True)
     nltk.download('omw-1.4', quiet=True)
 except Exception as e:
-    logger.error(f"Error downloading NLTK data: {e}")
-    raise
-
-app = FastAPI()
-
-# Configure CORS with more permissive settings
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    allow_origin_regex="http://localhost:.*"
-)
-
-# Initialize Supabase client
-try:
-    supabase_url = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
-    supabase_key = os.getenv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
-    
-    if not supabase_url or not supabase_key:
-        raise ValueError("Missing Supabase credentials")
-        
-    supabase: Client = create_client(supabase_url, supabase_key)
-except Exception as e:
-    logger.error(f"Error initializing Supabase client: {e}")
-    raise
+    print(f"Error downloading NLTK data: {e}")
 
 class TweetAnalyzer:
     def __init__(self):
         self.lemmatizer = WordNetLemmatizer()
         self.stop_words = set(stopwords.words('english'))
         
-    def clean_text(self, text: str) -> str:
-        if not isinstance(text, str):
-            return ""
-        # Remove URLs
-        text = re.sub(r'http\S+|www\S+|https\S+', '', text, flags=re.MULTILINE)
-        # Remove user mentions
-        text = re.sub(r'@\w+', '', text)
-        # Remove hashtags
-        text = re.sub(r'#\w+', '', text)
-        # Remove numbers
-        text = re.sub(r'\d+', '', text)
-        # Remove special characters
-        text = re.sub(r'[^\w\s]', '', text)
-        # Convert to lowercase and strip whitespace
-        return text.lower().strip()
+    # Your existing TweetAnalyzer methods here...
 
-    def tokenize_and_clean(self, text: str) -> List[str]:
-        try:
-            cleaned_text = self.clean_text(text)
-            tokens = word_tokenize(cleaned_text)
-            return [
-                self.lemmatizer.lemmatize(token)
-                for token in tokens
-                if token not in self.stop_words and len(token) > 2
-            ]
-        except Exception as e:
-            logger.error(f"Error in tokenize_and_clean: {e}")
-            return []
+def init_supabase():
+    """Initialize Supabase client"""
+    url = os.environ.get('NEXT_PUBLIC_SUPABASE_URL')
+    key = os.environ.get('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+    if not url or not key:
+        raise ValueError("Missing Supabase credentials")
+    return create_client(url, key)
 
-    def detect_bot(self, tweet: Dict[str, Any]) -> bool:
-        try:
-            content = str(tweet.get('content', ''))
-            metrics = tweet.get('metrics', {}) or {}
-            
-            indicators = [
-                content.count('@') > 3,
-                len(re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', content)) > 2,
-                metrics.get('retweet_count', 0) == 0 and metrics.get('reply_count', 0) == 0,
-                len(content) >= 280 and content.count('#') > 5,
-                content.lower().count('follow') > 2
-            ]
-            
-            return sum(indicators) >= 3
-        except Exception as e:
-            logger.error(f"Error in detect_bot: {e}")
-            return False
+def create_response(status_code: int, body: Dict[str, Any]) -> Dict[str, Any]:
+    """Create a standardized response"""
+    return {
+        "statusCode": status_code,
+        "headers": {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Allow-Methods": "POST, OPTIONS"
+        },
+        "body": json.dumps(body)
+    }
 
-    def get_sentiment(self, text: str) -> Dict[str, Any]:
-        try:
-            if not text:
-                return {'label': 'neutral', 'score': 0.0}
-                
-            blob = TextBlob(str(text))
-            polarity = blob.sentiment.polarity
-            
-            if polarity > 0.1:
-                label = 'positive'
-            elif polarity < -0.1:
-                label = 'negative'
-            else:
-                label = 'neutral'
-                
-            return {
-                'label': label,
-                'score': float(polarity)  # Ensure the score is a float
-            }
-        except Exception as e:
-            logger.error(f"Error in get_sentiment: {e}")
-            return {'label': 'neutral', 'score': 0.0}
+def handler(request):
+    """Main handler function for Vercel"""
+    # Handle OPTIONS request for CORS
+    if request.method == "OPTIONS":
+        return create_response(200, {"message": "OK"})
 
-@app.post("/analyze/{hashtag}")
-async def analyze_tweets(hashtag: str):
+    if request.method != "POST":
+        return create_response(405, {"error": "Method not allowed"})
+
     try:
-        logger.info(f"Starting analysis for hashtag: {hashtag}")
+        # Get hashtag from URL path
+        path_parts = request.path.split('/')
+        if len(path_parts) < 3:
+            return create_response(400, {"error": "Hashtag not provided"})
         
+        hashtag = path_parts[-1]  # Get last part of path
+
+        # Initialize Supabase
+        supabase = init_supabase()
+
         # Fetch tweets from Supabase
         response = supabase.table('tweets')\
             .select('*')\
@@ -147,9 +79,9 @@ async def analyze_tweets(hashtag: str):
         tweets = response.data
         
         if not tweets:
-            logger.warning(f"No tweets found for hashtag: {hashtag}")
-            raise HTTPException(status_code=404, detail="No tweets found for analysis")
+            return create_response(404, {"error": "No tweets found for analysis"})
 
+        # Initialize analyzer
         analyzer = TweetAnalyzer()
         processed_tweets = []
         word_counter = Counter()
@@ -157,29 +89,24 @@ async def analyze_tweets(hashtag: str):
         bot_count = 0
         total_sentiment = 0.0
 
-        # Process each tweet
+        # Process tweets
         for tweet in tweets:
-            try:
-                cleaned_tokens = analyzer.tokenize_and_clean(tweet.get('content', ''))
-                sentiment = analyzer.get_sentiment(tweet.get('content', ''))
-                is_bot = analyzer.detect_bot(tweet)
-                
-                # Update counters
-                word_counter.update(cleaned_tokens)
-                sentiment_distribution[sentiment['label']] += 1
-                total_sentiment += sentiment['score']
-                if is_bot:
-                    bot_count += 1
+            cleaned_tokens = analyzer.tokenize_and_clean(tweet.get('content', ''))
+            sentiment = analyzer.get_sentiment(tweet.get('content', ''))
+            is_bot = analyzer.detect_bot(tweet)
+            
+            word_counter.update(cleaned_tokens)
+            sentiment_distribution[sentiment['label']] += 1
+            total_sentiment += sentiment['score']
+            if is_bot:
+                bot_count += 1
 
-                processed_tweets.append({
-                    'tweet_id': str(tweet.get('tweet_id', '')),
-                    'cleaned_text': ' '.join(cleaned_tokens),
-                    'sentiment': sentiment,
-                    'is_bot': is_bot
-                })
-            except Exception as e:
-                logger.error(f"Error processing tweet {tweet.get('tweet_id', 'unknown')}: {e}")
-                continue
+            processed_tweets.append({
+                'tweet_id': str(tweet.get('tweet_id', '')),
+                'cleaned_text': ' '.join(cleaned_tokens),
+                'sentiment': sentiment,
+                'is_bot': is_bot
+            })
 
         # Prepare analysis results
         total_tweets = len(tweets)
@@ -192,31 +119,42 @@ async def analyze_tweets(hashtag: str):
                 'human_count': total_tweets - bot_count,
                 'bot_percentage': float((bot_count / total_tweets * 100) if total_tweets > 0 else 0)
             },
-            'most_common_words': [list(x) for x in word_counter.most_common(10)],  # Convert tuples to lists
+            'most_common_words': [list(x) for x in word_counter.most_common(10)],
             'processed_tweets': processed_tweets
         }
 
-        # Store analysis results in Supabase
+        # Store analysis results
         try:
             supabase.table('tweet_analysis').upsert({
                 'hashtag': hashtag,
                 'analysis_date': 'now()',
                 'results': analysis_results
-            }, on_conflict='hashtag').execute()  # Update to match your constraint name
+            }, on_conflict='hashtag').execute()
         except Exception as e:
             print(f"Error storing analysis results: {str(e)}")
-            raise HTTPException(status_code=500, detail=str(e))
             # Continue even if storage fails
 
-        return {
+        return create_response(200, {
             'success': True,
             'data': analysis_results
-        }
+        })
 
     except Exception as e:
-        logger.error(f"Error during analysis: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error during analysis: {str(e)}")
+        return create_response(500, {
+            'success': False,
+            'error': str(e)
+        })
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+# Requirements for vercel.json:
+"""
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/analyze.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/api/analyze/(.*)", "dest": "api/analyze.py" }
+  ]
+}
+"""
