@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TwitterResponse } from '@/lib/twitter';
+import { TwitterResponse } from '@/lib/types';
 
 export function useTweets() {
   const [loading, setLoading] = useState(false);
@@ -28,13 +28,15 @@ export function useTweets() {
       }
 
       if (useNextToken && tweets) {
-        // Append new tweets to existing ones
         setTweets({
-          data: [...tweets.data, ...data.data.data],
-          meta: data.data.meta
+          ...data,
+          data: {
+            data: [...tweets.data.data, ...data.data.data],
+            meta: data.data.meta
+          }
         });
       } else {
-        setTweets(data.data);
+        setTweets(data);
       }
 
       setNextToken(data.data.meta.next_token);
@@ -52,6 +54,6 @@ export function useTweets() {
     error,
     tweets,
     hasMore: !!nextToken,
-    loadMore: () => fetchTweetsForHashtag(tweets?.data[0]?.text.split('#')[1] || '', true)
+    loadMore: () => fetchTweetsForHashtag(tweets?.data.data[0]?.text.split('#')[1] || '', true)
   };
 }

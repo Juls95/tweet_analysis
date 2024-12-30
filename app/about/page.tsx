@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Github, Twitter, Linkedin } from 'lucide-react'
+import { Github, Twitter } from 'lucide-react'
 
 export default function About() {
   return (
@@ -32,8 +32,8 @@ export default function About() {
             <div className="flex-1">
               <h1 className="text-4xl font-bold mb-4 text-blue-300">About SentiMeter</h1>
               <p className="text-lg text-gray-300 mb-6">
-                SenTIAl helps you understand market trends and social sentiment through AI-powered analytics. We're focused on delivering high quality
-                analytics and allow eveyrone to understand DeFi and ThenaFi sentiment based on actual tweets and the historic information
+                SenTIAl helps you understand market trends and social sentiment through AI-powered analytics. We&apos;re focused on delivering high quality
+                analytics and allow everyone to understand DeFi and ThenaFi sentiment based on actual tweets and the historic information
                 stored in our servers.
               </p>
             </div>

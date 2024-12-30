@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Image from 'next/image';
 import Logo from './Logo';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {  PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { ProcessedTweet } from '@/lib/types';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -29,12 +30,25 @@ interface SentimentDistribution {
     average_sentiment: number;
     bot_statistics: BotStatistics;
     most_common_words: [string, number][];
-    processed_tweets: any[];
+    processed_tweets: ProcessedTweet[];
   }
   
   interface AnalysisResponse {
     success: boolean;
     data: AnalysisResults;
+  }
+  
+  interface StoredTweet {
+    tweet_id: string;
+    content: string;
+    created_at: string;
+    search_hashtag: string;
+    author_id?: string;
+    author_info: ProcessedTweet['author'] | null;
+    metrics: ProcessedTweet['metrics'] | null;
+    media: ProcessedTweet['media'];
+    hashtags: string[];
+    mentions: string[];
   }
   
 
@@ -46,7 +60,7 @@ const SENTIMENT_COLORS = {
   
 const BOT_COLORS = ['#2196F3', '#FF9800'];
 
-const processTweetsForStorage = (tweets: any[], searchHashtag: string) => {
+const processTweetsForStorage = (tweets: ProcessedTweet[], searchHashtag: string): StoredTweet[] => {
   return tweets.map(tweet => ({
     tweet_id: tweet.id,
     content: tweet.text,
@@ -61,7 +75,7 @@ const processTweetsForStorage = (tweets: any[], searchHashtag: string) => {
   }));
 };
 
-const storeInSupabase = async (processedTweets: any[]) => {
+const storeInSupabase = async (processedTweets: StoredTweet[]) => {
   console.log('Storing tweets:', processedTweets);
 
   const { data, error } = await supabase
@@ -82,14 +96,25 @@ const storeInSupabase = async (processedTweets: any[]) => {
   return data;
 };
 
+interface TwitterResponse {
+  success: boolean;
+  data: {
+    tweets: ProcessedTweet[];
+  };
+  rateLimits?: {
+    remaining: number;
+    resetsAt: string;
+  };
+}
+
 export default function DebugInterface() {
   const [hashtag, setHashtag] = useState('');
-  const [twitterResponse, setTwitterResponse] = useState(null);
-  const [supabaseData, setSupabaseData] = useState(null);
+  const [twitterResponse, setTwitterResponse] = useState<TwitterResponse | null>(null);
+  const [supabaseData, setSupabaseData] = useState<StoredTweet[] | null>(null);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   const loadFromJson = async () => {
     try {
@@ -382,7 +407,7 @@ export default function DebugInterface() {
                 <div className="p-4 bg-gray-800 rounded">
                   <h4 className="font-bold mb-2 text-blue-200">Most Common Words</h4>
                   <div className="space-y-2 max-h-48 overflow-auto">
-                    {analysisResults.data.most_common_words.map(([word, count], index) => (
+                    {analysisResults.data.most_common_words.map(([word, count]) => (
                       <div key={word} className="flex justify-between">
                         <span className="text-gray-300">{word}</span>
                         <span className="text-gray-400">{count}</span>

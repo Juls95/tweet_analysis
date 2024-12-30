@@ -1,7 +1,7 @@
-import { Tweet } from '@/lib/twitter';
+import { ProcessedTweet } from '@/lib/types';
 
 interface TweetListProps {
-  tweets: Tweet[];
+  tweets: ProcessedTweet[];
   loading: boolean;
   hasMore: boolean;
   onLoadMore: () => void;
@@ -13,11 +13,11 @@ export function TweetList({ tweets, loading, hasMore, onLoadMore }: TweetListPro
       {tweets.map((tweet) => (
         <div key={tweet.id} className="p-4 bg-white/5 rounded-lg">
           <p className="text-sm text-white/90">{tweet.text}</p>
-          {tweet.public_metrics && (
+          {tweet.metrics && (
             <div className="mt-2 flex gap-4 text-sm text-white/60">
-              <span>♺ {tweet.public_metrics.retweet_count}</span>
-              <span>💬 {tweet.public_metrics.reply_count}</span>
-              <span>❤️ {tweet.public_metrics.like_count}</span>
+              <span>♺ {tweet.metrics.retweet_count}</span>
+              <span>💬 {tweet.metrics.reply_count}</span>
+              <span>❤️ {tweet.metrics.like_count}</span>
             </div>
           )}
           <div className="mt-1 text-xs text-white/40">
