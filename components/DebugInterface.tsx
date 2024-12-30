@@ -211,7 +211,8 @@ export default function DebugInterface() {
       setError(null);
 
       // Call Python analysis service directly
-      const response = await fetch(`http://localhost:8000/analyze/${encodeURIComponent(hashtag)}`, {
+      //const response = await fetch(`http://localhost:8000/analyze/${encodeURIComponent(hashtag)}`, {
+      const response = await fetch(`/api/analyze/${encodeURIComponent(hashtag)}`, {  
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
